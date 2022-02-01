@@ -1,0 +1,152 @@
+openapi: 3.0.3
+info:
+  title: Fundhouse FX
+  description: Fundhouse's simple currency conversion API
+  termsOfService: https://www.fundhouse.co.za/terms-conditions/
+  version: 0.0.1
+  contact:
+    name: Alexis V.
+    email: dev@fundhouse.co.za
+    url: https://fundhouse.co.za/
+servers:
+  - description: PHP development server
+    url: http://localhost:8080
+components:
+  schemas:
+    Currency:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The human-readable currency name
+          example: South African Rand
+        iso_code:
+          type: string
+          description: The 3-letter ISO currency code
+          example: ZAR
+        symbol:
+          type: string
+          description: >-
+            The currency symbol typically used as a prefix/suffix to a monetary
+            amount
+          example: R
+    CurrencyPair:
+      type: object
+      properties:
+        base_currency:
+          type: string
+          description: The base currency's ISO code
+          example: ZAR
+        quote_currency:
+          type: string
+          description: The quote currency's ISO code
+          example: USD
+    SpotRate:
+      type: object
+      description: >-
+        Signifies the spot exchange rate of one currency for another at a point
+        in time
+      properties:
+        timestamp:
+          type: string
+          description: The ISO8601 timestamp of the quoted spot rate
+          format: date-time
+          example: '2005-06-02T15:10:16'
+        value:
+          type: number
+          format: double
+          description: The spot exchange rate
+          example: '0.0653'
+    Quote:
+      type: object
+      description: Represents the result of converting an amount of one currency to another
+      allOf:
+        - $ref: '#/components/schemas/CurrencyPair'
+      properties:
+        base_amount:
+          type: number
+          format: double
+          example: 10000
+        converted_amount:
+          type: number
+          format: double
+          example: 650
+paths:
+  /currencies:
+    get:
+      description: Returns a list of supported currencies
+      responses:
+        '200':
+          description: An array containing all supported individual currencies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Currency'
+  /rates/{base_ccy}/{quote_ccy}:
+    get:
+      description: Returns a collection of historic spot rates for the given currency pair
+      parameters:
+        - name: base_ccy
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: quote_ccy
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: >-
+            A sorted array of historic spot rates from the base currency to the
+            quote currency
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/CurrencyPair'
+                properties:
+                  rates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SpotRate'
+        '400':
+          description: >-
+            Status returned when invalid/unsupported {base_ccy} or {quote_ccy}
+            parameters are specified
+  /convert/{base_ccy}/{quote_ccy}:
+    get:
+      parameters:
+        - name: base_ccy
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: quote_ccy
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: amount
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+      responses:
+        '200':
+          description: >-
+            Returns the converted monetary amount from the base currency to the
+            quote currency
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '400':
+          description: >-
+            Status returned when invalid/unsupported {base_ccy} or {quote_ccy}
+            parameters are specified

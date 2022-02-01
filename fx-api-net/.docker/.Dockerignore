@@ -1,0 +1,6 @@
+.docker/
+.idea/
+.vscode/
+bin/
+obj/
+README.md
